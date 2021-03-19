@@ -4,6 +4,7 @@ local Functions = require 'maps.mountain_fortress_v3.functions'
 local BuriedEnemies = require 'maps.mountain_fortress_v3.buried_enemies'
 
 local HS = require 'maps.mountain_fortress_v3.highscore'
+local Discord = require 'utils.discord'
 local IC = require 'maps.mountain_fortress_v3.ic.table'
 local ICMinimap = require 'maps.mountain_fortress_v3.ic.minimap'
 local Autostash = require 'modules.autostash'
@@ -36,6 +37,7 @@ local Misc = require 'commands.misc'
 local Modifiers = require 'player_modifiers'
 local BiterHealthBooster = require 'modules.biter_health_booster_v2'
 local Reset = require 'functions.soft_reset'
+local JailData = require 'utils.datastore.jail_data'
 
 require 'maps.mountain_fortress_v3.rocks_yield_ore_veins'
 
@@ -50,6 +52,16 @@ require 'modules.no_deconstruction_of_neutral_entities'
 require 'modules.spawners_contain_biters'
 require 'modules.wave_defense.main'
 require 'modules.charging_station'
+
+-- Use these settings for live
+local send_ping_to_channel = Discord.channel_names.mtn_channel
+local role_to_mention = Discord.role_mentions.mtn_fortress
+-- Use these settings for testing
+-- bot-lounge
+-- local send_ping_to_channel = Discord.channel_names.bot_quarters
+-- dev
+-- local send_ping_to_channel = Discord.channel_names.dev
+-- local role_to_mention = Discord.role_mentions.test_role
 
 local Public = {}
 local raise_event = script.raise_event
@@ -108,7 +120,7 @@ function Public.reset_map()
     Reset.enable_mapkeeper(true)
 
     this.active_surface_index = CS.create_surface()
-    this.soft_reset_counter = CS.get_reset_counter()
+    -- this.soft_reset_counter = CS.get_reset_counter()
 
     Autostash.insert_into_furnace(true)
     Autostash.insert_into_wagon(true)
@@ -152,6 +164,8 @@ function Public.reset_map()
     if this.winter_mode then
         surface.daytime = 0.45
     end
+
+    JailData.set_valid_surface(tostring(surface.name))
 
     Explosives.set_surface_whitelist({[surface.name] = true})
 
@@ -198,7 +212,8 @@ function Public.reset_map()
     Collapse.set_kill_specific_entities(collapse_kill)
     Collapse.set_speed(8)
     Collapse.set_amount(1)
-    Collapse.set_max_line_size(WPT.level_width)
+    -- Collapse.set_max_line_size(WPT.level_width)
+    Collapse.set_max_line_size(540)
     Collapse.set_surface(surface)
     Collapse.set_position({0, 130})
     Collapse.set_direction('north')
@@ -250,6 +265,8 @@ function Public.reset_map()
     this.force_chunk = true
     this.market_announce = game.tick + 1200
     this.game_lost = false
+
+    Server.to_discord_named_raw(send_ping_to_channel, role_to_mention .. ' ** Mtn Fortress was just reset! **')
 end
 
 local is_locomotive_valid = function()
